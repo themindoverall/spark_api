@@ -89,11 +89,16 @@ module SparkApi
         raise
       end
       response.body
+    rescue Faraday::Error::ConnectionFailed => e
+      if self.ssl_verify && e.message =~ /certificate verify failed/
+        SparkApi.logger.error(SparkApi::Errors.ssl_verification_error)
+      end
+      raise e
     end
     
     def process_request_body(body)
-      if body.is_a?(Hash) && !body.empty?
-        {"D" => body }.to_json
+      if body.is_a?(Hash)
+        body.empty? ? "{}" : {"D" => body }.to_json
       else
         body
       end
